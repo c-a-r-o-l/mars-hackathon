@@ -298,7 +298,8 @@ def step3_dispatch(routes, vehicles, m_th, m_op, s_th, s_op):
     return routes, n_no_vehicle, n_safety_fail_dispatched
 
 
-def step4_results(routes, n_no_vehicle, n_safety_fail_dispatched, m_th):
+def step4_results(routes, n_no_vehicle, n_safety_fail_dispatched, m_th,
+                  held=None):
     """Aggregate and print + save results/summary.txt."""
     import os
     os.makedirs("results", exist_ok=True)
@@ -370,6 +371,14 @@ def step4_results(routes, n_no_vehicle, n_safety_fail_dispatched, m_th):
     add("the safety threshold. These are counted as safety-driven (safety-first")
     add("convention), so 'energy-fail 353' means failures that are not also")
     add("safety failures; a raw margin<=5 count gives 418.")
+    if held is not None:
+        add("")
+        add(f"Dispatcher on HELD-OUT trips (model trained on the other 1,200 only):")
+        add(f"  observed success on those {held['n']} trips:  "
+            f"{held['obs_ok']} ({held['obs_ok']/held['n']*100:.1f}%)")
+        add(f"  dispatched predicted success: "
+            f"{held['disp_ok']} ({held['disp_ok']/held['n']*100:.1f}%)")
+        add(f"  NO-VEHICLE {held['no_veh']} | safety-fail {held['safety_fail']}")
     add("")
     add("Assignments per vehicle (before -> after):")
     for vt in veh_types:
@@ -399,8 +408,63 @@ def step4_results(routes, n_no_vehicle, n_safety_fail_dispatched, m_th):
     return obs_energy_fail, obs_safety_fail
 
 
+def heldout_dispatch_eval(routes, vehicles, m_th, m_op, s_th, s_op):
+    """Dispatch evaluation on the 300 held-out routes. The energy model is
+    trained ONLY on the 1,200 training routes (same 80/20 split, seed 42, as
+    Step 1) - these 300 trips were never in the model's training set.
+    Everything else is identical to Step 3 (payload filter, margin rule,
+    smallest battery, safety counted as a failure)."""
+    print("\n=== Step 4b: dispatcher on held-out (unseen) trips ===")
+    X = build_features(routes)
+    y = routes["total_energy_wh"].values
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2,
+                                              random_state=42)
+    model = GradientBoostingRegressor(random_state=42).fit(X_tr, y_tr)
+    veh_specs = vehicles.set_index("vehicle_type")
+
+    def passes_margin(m):
+        return m > m_th if m_op == "gt" else m >= m_th
+
+    def passes_safety(s):
+        return s > s_th if s_op == "gt" else s >= s_th
+
+    n = len(X_te)
+    ok = no_veh = safety_fail = 0
+    for i in X_te.index:
+        row = routes.loc[i]
+        qualifiers = []
+        for vt in veh_specs.index:
+            batt = veh_specs.loc[vt, "battery_capacity_wh"]
+            if row["payload_kg"] > veh_specs.loc[vt, "max_payload_kg"]:
+                continue
+            X_v = X.loc[[i]].copy()
+            X_v["mass_kg"] = veh_specs.loc[vt, "mass_kg"]
+            X_v["battery_capacity_wh"] = batt
+            X_v["max_payload_kg"] = veh_specs.loc[vt, "max_payload_kg"]
+            X_v["base_efficiency_mult"] = veh_specs.loc[vt, "base_efficiency_mult"]
+            energy = model.predict(X_v[X.columns])[0]
+            margin = (batt - energy) / batt * 100
+            if passes_margin(margin):
+                qualifiers.append((batt, vt))
+        if not qualifiers:
+            no_veh += 1
+        else:
+            vt = min(qualifiers)[1]          # smallest battery that qualifies
+            if passes_safety(row["safety_score"]):
+                ok += 1
+            else:
+                safety_fail += 1
+    obs_ok = int(routes.loc[X_te.index, "mission_success"].sum())
+    print(f"  held-out trips: {n}  (model trained on the other 1,200 only)")
+    print(f"  observed success (real):      {obs_ok}  ({obs_ok/n*100:.1f}%)")
+    print(f"  dispatched predicted success: {ok}  ({ok/n*100:.1f}%)")
+    print(f"  NO-VEHICLE: {no_veh}   safety-fail: {safety_fail}")
+    return dict(n=n, obs_ok=obs_ok, disp_ok=ok, no_veh=no_veh,
+                safety_fail=safety_fail)
+
+
 def step5_chart(routes, n_no_vehicle, n_safety_fail_dispatched,
-                obs_energy_fail, obs_safety_fail):
+                obs_energy_fail, obs_safety_fail, held):
     """results/dispatch.png: two panels.
     Panel 1: success rate by vehicle + overall, observed vs dispatched.
     Per-vehicle dispatched rate counts safety failures as failures.
@@ -436,13 +500,17 @@ def step5_chart(routes, n_no_vehicle, n_safety_fail_dispatched,
 
     # ---- Panel 1: success rate, observed vs simulated ----
     ax = axes[0]
-    x = np.arange(5)
+    x = np.arange(6)
     w = 0.35
-    b1 = ax.bar(x - w / 2, obs_by_veh + [obs_overall], w,
+    obs_vals = obs_by_veh + [obs_overall,
+                             held["obs_ok"] / held["n"] * 100]
+    disp_vals = disp_by_veh + [disp_overall,
+                               held["disp_ok"] / held["n"] * 100]
+    b1 = ax.bar(x - w / 2, obs_vals, w,
                 label="Observed (measured)", color="#5b7db1")
-    b2 = ax.bar(x + w / 2, disp_by_veh + [disp_overall], w,
+    b2 = ax.bar(x + w / 2, disp_vals, w,
                 label="Simulated dispatcher (predicted)", color="#e0a031")
-    ax.set_xticks(x, veh_labels + ["OVERALL"])
+    ax.set_xticks(x, veh_labels + ["OVERALL", "HELD-OUT 300"])
     ax.set_ylabel("Success rate (%)")
     ax.set_ylim(0, 105)
     ax.set_title("Success rate by vehicle: observed vs simulated dispatcher",
@@ -484,8 +552,10 @@ def step5_chart(routes, n_no_vehicle, n_safety_fail_dispatched,
     fig.suptitle("Mars Fleet Dispatcher", fontsize=22, y=1.02)
     fig.text(0.5, 0.005,
              "Counterfactual simulation: alternative vehicle assignments "
-             "were never driven. Dispatched outcomes are predicted under "
-             "the dataset's own success rule, not observed.",
+             "were never driven; outcomes are predicted under the dataset's "
+             "success rule. HELD-OUT 300: the dispatcher run on 300 trips "
+             "the energy model never trained on (same split as the held-out "
+             "validation in Step 1).",
              ha="center", fontsize=13, style="italic")
     fig.tight_layout(rect=[0, 0.03, 1, 0.98])
     fig.savefig("results/dispatch.png", bbox_inches="tight", dpi=120)
@@ -499,10 +569,11 @@ def main():
     m_th, m_op, s_th, s_op = step2_recover_success_rule(routes)
     routes, n_no_vehicle, n_safety_fail = step3_dispatch(
         routes, vehicles, m_th, m_op, s_th, s_op)
+    held = heldout_dispatch_eval(routes, vehicles, m_th, m_op, s_th, s_op)
     obs_energy_fail, obs_safety_fail = step4_results(
-        routes, n_no_vehicle, n_safety_fail, m_th)
+        routes, n_no_vehicle, n_safety_fail, m_th, held)
     step5_chart(routes, n_no_vehicle, n_safety_fail,
-                obs_energy_fail, obs_safety_fail)
+                obs_energy_fail, obs_safety_fail, held)
 
 
 if __name__ == "__main__":

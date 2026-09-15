@@ -32,6 +32,11 @@ the safety threshold. These are counted as safety-driven (safety-first
 convention), so 'energy-fail 353' means failures that are not also
 safety failures; a raw margin<=5 count gives 418.
 
+Dispatcher on HELD-OUT trips (model trained on the other 1,200 only):
+  observed success on those 300 trips:  185 (61.7%)
+  dispatched predicted success: 255 (85.0%)
+  NO-VEHICLE 0 | safety-fail 45
+
 Assignments per vehicle (before -> after):
   light_scout      342 ->   517
   cargo_hauler     394 ->   282
