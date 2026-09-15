@@ -80,6 +80,65 @@ def step1_energy_model(routes):
     return model, mae, r2, mae_base
 
 
+def vehicle_signal_diagnostic(routes):
+    """Reproducible evidence for the 'no detectable vehicle signal' finding
+    (see README / results summary). Fits on all 1,500 rows unless noted."""
+    print("\n=== DATA FINDING: vehicle signal diagnostic ===")
+
+    X_all = build_features(routes)
+    y_all = routes["total_energy_wh"].values
+
+    # 1. vehicle-feature importances at 5 dp + sum + share of total
+    model = GradientBoostingRegressor(random_state=42).fit(X_all, y_all)
+    veh_feats = ["mass_kg", "battery_capacity_wh", "max_payload_kg",
+                 "base_efficiency_mult"]
+    idx = [X_all.columns.get_loc(f) for f in veh_feats]
+    imp = model.feature_importances_[idx]
+    for f, v in zip(veh_feats, imp):
+        print(f"  importance {f:<20} {v:.5f}")
+    print(f"  sum of vehicle-feature importances: {imp.sum():.5f} "
+          f"({imp.sum()/model.feature_importances_.sum()*100:.3f}% of total)")
+
+    # 2. held-out MAE with vehicle-identity dummies vs without
+    X_d = pd.concat([X_all, pd.get_dummies(routes["vehicle_type"],
+                                           dtype=float)], axis=1)
+    X_tr, X_te, y_tr, y_te = train_test_split(X_d, y_all, test_size=0.2,
+                                              random_state=42)
+    mae_d = np.abs(GradientBoostingRegressor(random_state=42)
+                   .fit(X_tr, y_tr).predict(X_te) - y_te).mean()
+    X_tr0, X_te0, y_tr0, y_te0 = train_test_split(X_all, y_all,
+                                                  test_size=0.2,
+                                                  random_state=42)
+    mae_0 = np.abs(GradientBoostingRegressor(random_state=42)
+                   .fit(X_tr0, y_tr0).predict(X_te0) - y_te0).mean()
+    print(f"  held-out MAE without dummies: {mae_0:.1f} Wh; "
+          f"with dummies: {mae_d:.1f} Wh")
+
+    # 3. GBM residuals by vehicle (fit on all 1,500)
+    resid = y_all - model.predict(X_all)
+    r = routes.assign(gbm_resid=resid)
+    print("  GBM residual mean/std by vehicle (fit on all 1,500):")
+    for vt, grp in r.groupby("vehicle_type"):
+        print(f"    {vt:<14} mean {grp.gbm_resid.mean():+7.1f}  "
+              f"std {grp.gbm_resid.std():7.1f}")
+
+    # 4. linear route+payload-only residuals by vehicle (the ~502 Wh
+    # spread is payload-nonlinearity, not a vehicle effect)
+    route_cols = ["distance_km", "num_cells", "avg_slope_deg",
+                  "max_slope_deg", "avg_rock_density",
+                  "pct_high_hazard_cells", "payload_kg"]
+    lin = LinearRegression().fit(X_all[route_cols], y_all)
+    lin_resid = y_all - lin.predict(X_all[route_cols])
+    r = r.assign(lin_resid=lin_resid)
+    print("  linear (route+payload only) residual mean by vehicle:")
+    means = {}
+    for vt, grp in r.groupby("vehicle_type"):
+        means[vt] = grp.lin_resid.mean()
+        print(f"    {vt:<14} mean {means[vt]:+7.1f}")
+    spread = max(means.values()) - min(means.values())
+    print(f"  linear residual spread across vehicles: {spread:.1f} Wh")
+
+
 def step2_recover_success_rule(routes):
     """Find the energy_margin_pct / safety_score thresholds that best
     reproduce mission_success. Coarse grid to locate the region, then snap
@@ -436,6 +495,7 @@ def step5_chart(routes, n_no_vehicle, n_safety_fail_dispatched,
 def main():
     routes, vehicles = load_data()
     step1_energy_model(routes)
+    vehicle_signal_diagnostic(routes)
     m_th, m_op, s_th, s_op = step2_recover_success_rule(routes)
     routes, n_no_vehicle, n_safety_fail = step3_dispatch(
         routes, vehicles, m_th, m_op, s_th, s_op)
