@@ -385,7 +385,7 @@ def step5_chart(routes, n_no_vehicle, n_safety_fail_dispatched,
                  fontsize=18, pad=12)
     for bars in (b1, b2):
         for rect in bars:
-            ax.annotate(f"{rect.get_height():.0f}%",
+            ax.annotate(f"{rect.get_height():.1f}%",
                         (rect.get_x() + rect.get_width() / 2,
                          rect.get_height() + 2),
                         ha="center", fontsize=13)
