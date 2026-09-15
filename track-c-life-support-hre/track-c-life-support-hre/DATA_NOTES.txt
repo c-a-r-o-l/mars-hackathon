@@ -1,0 +1,37 @@
+TRACK C  -  Life Support  -  ESA HREDA / Mars500 closed-loop pack
+=============================================================
+
+What this is for
+  Closed-loop O2 / water / food / waste forecasting and greenhouse air
+  ventilation for a 100-person settlement across a minimum 730-day window,
+  including a dust-storm season that crashes solar availability.
+
+Source dataset
+  ESA HREDA archive (Mars500 / Mars105 ECLSS + physiological telemetry framing)
+  http://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/8b3a6c3f-e7a0-4fb1-8693-8edd6515d06d.html
+  Metabolic rate priors: NASA ECLSS / Weiland (0.84 kg O2 per person-day, etc.)
+
+What we sliced / simulated
+  SIMULATED (HREDA/Mars500-informed), scaled to hack preconditions.
+  Public HREDA bulk telemetry is archive-gated for many users, so this pack
+  builds a clean daily ECLSS table using Mars500 closed-loop experiment
+  structure + published per-person rates, then scales to crew_size=100 over
+  730 days.
+
+  Dust storm days 180-260: lower solar_availability,
+  slightly worse recovery efficiency, higher greenhouse_ventilation_m3_per_h
+  and cabin_co2_ppm_proxy (indoor air stress).
+
+Files
+  mars500_eclss_scaled_100p_730d.csv
+  window_totals.json
+  load_example.py
+  manifest.json
+
+How to use tonight
+  Forecast resource margins or tune a greenhouse HVAC brain off
+  activity_level, dust_storm_flag, and ventilation columns.
+
+Attribution
+  See repo root CREDITS.txt, LICENSE, and KNOWN_ISSUES.txt for sources,
+  license gaps, and adversarial checks before you demo.

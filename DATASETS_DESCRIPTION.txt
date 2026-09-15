@@ -1,0 +1,222 @@
+MARS HACKATHON - DATASET DESCRIPTIONS
+======================================
+
+Common preconditions across all tracks:
+  - 100-person settlement
+  - 730-sol (~2 Earth-year) window
+  - Dust-storm season: sols/days 180-260
+
+Files with "Zone.Identifier" suffix are Windows download metadata
+artifacts and can be ignored.
+
+
+TRACK A - Architecture (EMARS weather pack)
+--------------------------------------------
+Folder: track-a-architecture-emars/track-a-architecture-emars/
+
+Purpose: thermal & weather-aware habitat design for the settlement.
+Source: EMARS (Ensemble Mars Atmosphere Reanalysis System) v1.0
+        (paper: doi 10.1002/gdj3.77). Data is SIMULATED from EMARS-style
+        climate ranges (not a raw NetCDF extract).
+Site: lat 18.4, lon 77.5 (Jezero-band proxy).
+
+Files:
+  emars_settlement_hourly_730sol.csv / .parquet  (17,520 rows = 730 sols x 24 h)
+      Columns: sol, hour, mars_year_proxy, ls_deg_approx, lat, lon,
+      temperature_c, wind_u_ms, wind_v_ms, surface_pressure_pa,
+      dust_optical_depth, dust_storm_flag, habitat_thermal_load_kw_100p
+      (thermal load scaled to 100 occupants; higher under dust/cold nights)
+  emars_settlement_daily_summary.csv  (730 rows)
+      Columns: sol, t_min_c, t_max_c, t_mean_c, dust_max,
+      pressure_mean_pa, thermal_load_mean_kw, dust_storm_flag
+  manifest.json      - machine-readable provenance
+  DATA_NOTES.txt     - track description (this summary is based on it)
+  CREDITS_SNIPPET.txt - attribution snippet
+
+
+TRACK B - Vehicles & Mobility (AI4MARS terrain pack)
+----------------------------------------------------
+Folder: track-b-vehicles-ai4mars/track-b-vehicles-ai4mars/
+
+Purpose: terrain-aware route scoring / self-driving surface transport
+         (battery wear included).
+Source: AI4MARS (~35k rover images, ~326k terrain labels, NASA).
+        Classes: 0=soil, 1=bedrock, 2=sand, 3=big_rock, 255=unlabeled.
+
+Files:
+  images/            60 rover frames (.jpg):
+                      - 48 real Curiosity/AI4MARS image+label pairs,
+                        resized 256x256
+                      - 12 synthetic frames with dust occlusion added
+                        for storm robustness
+  labels/            60 matching segmentation masks (.png)
+  label_legend.json  pixel value -> terrain class mapping
+  logistics_duty_cycle_100p_730sol.csv  (3,130 trips = ~4-6 trips/sol x 730 sols)
+      Columns: trip_id, sol, trip_index, crew_served, route_km,
+      payload_kg, terrain_risk_score, energy_kwh, dust_storm_flag,
+      battery_soh (battery state-of-health decay)
+  manifest.json      - provenance (images pulled, errors, preconditions)
+  DATA_NOTES.txt     - track description
+
+
+TRACK B2 - Vehicles & Mobility (synthetic route-planning dataset)
+-----------------------------------------------------------------
+Folder: track-b2-mobility-ai4mars/track-b2-mobility-ai4mars/
+
+Purpose: fully synthetic, reproducible route-cost scoring and
+         mission-success prediction (seeded, numpy/pandas only).
+         Designed so real HiRISE/MOLA rasters can be swapped in later.
+
+Concept: the terrain grid is a cost surface (each cell has an energy
+cost per metre and a hazard probability). Routes are paths drawn
+across that surface, each carrying a payload on a specific vehicle.
+Two route planners are simulated: "optimized" (energy+hazard-aware)
+and "naive" (near-straight-line, noisy). The labels to learn:
+  - per-cell:  traversal_energy_wh_per_m, hazard_prob
+  - per-route: total_energy_wh, safety_score, mission_success
+
+Files:
+  terrain_grid.csv   (3,600 rows = 60x60 grid, 20 m/cell, ~1.2 x 1.2 km)
+      One row per terrain cell. Columns: cell_id, grid_x, grid_y,
+      elevation_m, slope_deg, terrain_type, rock_density,
+      dust_depth_cm, solar_exposure_pct, surface_temp_c, hazard_prob,
+      safety_score (=1-hazard_prob), traversal_energy_wh_per_m
+  vehicles.csv       (4 rows - reference table)
+  routes.csv         (1,500 candidate point-to-point routes)
+  README.md          - full column dictionary, ML angles, quick start code
+
+  NOTE: README.md mentions generate_dataset.py and 7 terrain types,
+  but the script is NOT present in the folder, and only 5 terrain
+  types actually occur in the data (see below).
+
+=== terrain_grid.csv - what the numbers look like ===
+
+  terrain_type distribution (of 3,600 cells):
+      regolith_plain    2,688   (the "easy" default terrain)
+      rock_field          623
+      crater_floor        166
+      crater_rim          110
+      dune_field           13
+      dust_pit              0   (documented in README, never occurs)
+      lava_tube_entrance    0   (documented in README, never occurs)
+
+  Column ranges:
+      elevation_m            -69.75 .. +37.56   (std 18.2 m; crater bowls)
+      slope_deg                0.07 ..  58.48   (mean 12.5)
+      rock_density             0.17 ..   1.00
+      dust_depth_cm            0.00 ..  24.79
+      solar_exposure_pct       5    ..  84      (flavour, for microgrids)
+      surface_temp_c         -60.7  .. -19.1    (flavour)
+      hazard_prob              0.00 ..   0.55
+      traversal_energy_wh_per_m 0.84 ..  5.84
+
+  Mean hazard_prob and energy cost by terrain type (the cost surface):
+      terrain_type       hazard_prob   Wh/m
+      rock_field            0.294      3.02   <- hardest, most expensive
+      crater_rim            0.230      2.12
+      dune_field            0.185      1.90
+      crater_floor          0.132      1.68
+      regolith_plain        0.103      1.45   <- cheapest
+
+  What drives hazard (correlations across cells):
+      slope_deg       ~ hazard_prob   r = 0.80   <- dominant driver
+      rock_density    ~ hazard_prob   r = 0.43
+      dust_depth_cm   ~ hazard_prob   r = 0.06   <- negligible
+
+=== vehicles.csv - the fleet ===
+
+  vehicle_type    mass_kg  battery_wh  max_payload_kg  efficiency_mult
+  light_scout       180      3,500        40            0.85
+  cargo_hauler      950     14,000       600            1.30
+  crew_transport    620      9,500       250            1.10
+  swarm_builder      75      1,200        15            0.75
+
+  Payload-vs-range angle: cargo_hauler has 14 kWh and 600 kg capacity;
+  swarm_builder has only 1.2 kWh, so range collapses under load
+  (see energy margins below).
+
+=== routes.csv - 1,500 candidate routes ===
+
+  Composition:
+      660 "naive" routes, 840 "optimized" routes
+      Vehicles: swarm_builder 411, cargo_hauler 394,
+                crew_transport 353, light_scout 342
+      Endpoints span the full 0-59 grid; routes are 13-181 cells long
+      (0.32 - 5.03 km, mean 1.39 km).
+
+  Targets:
+      total_energy_wh    trip energy consumption (385 - 14,015 Wh)
+      safety_score       0-1 (0.13 - 0.93, mean 0.68)
+      mission_success    binary: enough energy margin AND safe enough
+
+  Mission success:
+      overall            63.9%
+      optimized routes   69.5%   vs  naive routes 56.7%
+      cargo_hauler       84.0%
+      crew_transport     83.9%
+      light_scout        70.8%
+      swarm_builder      21.7%   <- tiny 1.2 kWh battery
+
+  Energy margin % (battery - energy) / battery:
+      cargo_hauler    min -0.1   mean +72.9
+      crew_transport  min -35.4  mean +64.6
+      light_scout     min -222.7 mean +22.9
+      swarm_builder   min -797.7 mean -91.1  <- chronically overdrawn
+
+  Success by dominant terrain on the route:
+      regolith_plain  n=1456  65.3% success
+      crater_floor    n=14    50.0%
+      rock_field      n=30     0.0%   <- any rock-dominated route fails
+
+  What drives the labels (route-level correlations, n=1,500):
+      safety_score ~ pct_high_hazard_cells   r = -0.99 (near-deterministic)
+      safety_score ~ avg_slope_deg           r = -0.81
+      mission_success ~ energy_margin_pct    r =  0.60  <- strongest success driver
+      mission_success ~ pct_high_hazard_cells r = -0.46
+      total_energy_wh ~ distance_km          r =  0.90
+      total_energy_wh ~ payload_fraction     r =  0.15  <- weak; distance dominates
+
+Suggested ML angles (from README, with data realities added):
+  - Per-cell cost model: predict traversal_energy_wh_per_m or
+    hazard_prob from slope_deg, rock_density, terrain_type. Slope alone
+    gets you most of hazard; terrain_type adds the rock-field spike.
+    Use the model as the cost surface for your own A*/Dijkstra planner.
+  - Mission-success classifier: predict mission_success from route +
+    vehicle features. Beware class imbalance per vehicle (swarm_builder
+    is 78% failures) and the 0%-success rock_field routes.
+  - Payload vs range: predict total_energy_wh from distance_km,
+    payload_kg, slope - distance dominates (r=0.90), so demonstrate
+    the payload effect by conditioning on vehicle/battery.
+  - Terrain classification from imagery: render the grid as a
+    false-colour raster (elevation/slope/rock_density as channels)
+    and classify terrain_type on cropped tiles.
+
+
+TRACK C - Life Support (HREDA / Mars500 closed-loop pack)
+---------------------------------------------------------
+Folder: track-c-life-support-hre/track-c-life-support-hre/
+
+Purpose: closed-loop O2 / water / food / waste forecasting and
+         greenhouse air ventilation. Dust-storm season (days 180-260)
+         lowers solar availability and recovery efficiency.
+Source: ESA HREDA archive (Mars500/Mars105 ECLSS framing) + NASA ECLSS
+        metabolic rate priors (0.84 kg O2 per person-day etc.).
+        Data is SIMULATED (HREDA/Mars500-informed), scaled to
+        crew_size=100 over 730 days.
+
+Files:
+  mars500_eclss_scaled_100p_730d.csv  (730 rows, one per day)
+      Columns: day, sol, crew_size, activity_level, dust_storm_flag,
+      solar_availability, o2_consumption_kg, co2_production_kg,
+      water_use_kg, food_kg, waste_kg, o2_recovery_efficiency,
+      water_recovery_efficiency, net_o2_makeup_kg, net_water_makeup_kg,
+      greenhouse_ventilation_m3_per_h, cabin_co2_ppm_proxy
+  window_totals.json  totals over the 730-day window:
+      total_o2_consumed_kg = 65,051.91
+      total_water_use_kg = 259,000.0
+      total_net_o2_makeup_kg = 5,579.15
+      total_net_water_makeup_kg = 14,299.87
+      dust_storm_days = 81
+  load_example.py    example loading script
+  manifest.json      - provenance + per-person-day rates
+  DATA_NOTES.txt     - track description

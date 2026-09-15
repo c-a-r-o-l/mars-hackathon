@@ -1,0 +1,82 @@
+CREDITS AND SOURCE ATTRIBUTION
+==============================
+
+This pack credits the open / public Mars sources that Guided Trajectory builds
+on. Cite the upstream papers if you present or publish your hack work.
+
+-------------------------------------------------------------------------------
+Track A · Architecture (EMARS climate prior)
+-------------------------------------------------------------------------------
+Dataset: Ensemble Mars Atmosphere Reanalysis System (EMARS) Version 1.0
+Authors: Greybush, S. J.; Kalnay, E.; Wilson, R. J.; Hoffman, R. N.; and coauthors
+Paper: Greybush et al., Geoscience Data Journal
+  https://doi.org/10.1002/gdj3.77
+Archive DOI: https://doi.org/10.18113/D3W375
+Landing page:
+  https://www.datacommons.psu.edu/download/meteorology/greybush/emars-1p0/a_landing_page.html
+
+What this repo ships: EMARS-INFORMED SIMULATION at one settlement site
+(not a raw NetCDF extract). Full EMARS files are multi-GB.
+
+License note: Penn State Data Commons listing does not show a clear
+machine-readable open license on the landing page. Cite EMARS; do not claim
+this pack redistributes the official NetCDF archive.
+
+-------------------------------------------------------------------------------
+Track B · Vehicles & Mobility (AI4MARS terrain)
+-------------------------------------------------------------------------------
+Dataset: AI4MARS — A Dataset for Terrain-Aware Autonomous Driving on Mars
+Authors / custodians: Swan, R.; Ono, M.; Atha, D. (JPL / NASA)
+NASA portal:
+  https://data.nasa.gov/dataset/ai4mars-a-dataset-for-terrain-aware-autonomous-driving-on-mars
+Zenodo: https://doi.org/10.5281/zenodo.15995035
+Related papers: IEEE Aerospace / CVPRW AI4MARS publications (cite per Zenodo note)
+
+Mirror used for slicing (Hugging Face):
+  https://huggingface.co/datasets/hassanjbara/AI4MARS
+  (community mirror of the Kaggle / AI4MARS release; not an official NASA host)
+
+What this repo ships:
+  - 48 resized real image+label pairs sliced from the HF mirror
+  - 12 synthetic dust-augmented frames (original to this pack)
+  - logistics_duty_cycle_100p_730sol.csv (SIMULATED timetable for the hack)
+
+License note: NASA Open Data Portal currently lists "License not specified"
+for AI4MARS. Zenodo asks users to cite the related papers. Treat images as
+NASA/JPL research data with attribution required; check upstream before
+commercial reuse.
+
+-------------------------------------------------------------------------------
+Track C · Life Support (ESA HREDA / Mars500 framing)
+-------------------------------------------------------------------------------
+Archive framing: ESA Human and Robotic Exploration Data Archive (HREDA)
+Portal: https://www.cosmos.esa.int/web/hreda
+Example Mars500 investigation DOI page (framing only):
+  http://esdcdoi.esac.esa.int/doi/html/data/hre/hreda/8b3a6c3f-e7a0-4fb1-8693-8edd6515d06d.html
+
+Metabolic rate priors used in the simulated table (not HREDA telemetry):
+  NASA NTRS 20170007268 summarizing Weiland (1994) baselines
+  (~0.84 kg O2 / person-day and related ECLSS flows)
+
+What this repo ships: SIMULATED daily ECLSS table scaled to 100 people /
+730 days. No raw Mars500 personal / medical telemetry is included.
+
+License note: ESA Space Science Archive data are commonly distributed under
+CC BY-NC 3.0 IGO (attribution; non-commercial without prior ESA authorisation).
+HREDA downloads require authentication even for public science data. This pack
+does not redistribute ESA archive files.
+
+-------------------------------------------------------------------------------
+Mission brief PDF
+-------------------------------------------------------------------------------
+Mars_Hackathon_Mission_Brief.pdf is event material for
+PhysicsX · GirlsWhoML · Cursor. Not an official PhysicsX product release.
+Keep event branding intact if you fork for the same hack.
+
+-------------------------------------------------------------------------------
+Suggested citations (short)
+-------------------------------------------------------------------------------
+EMARS: Greybush et al. (2019), Geoscience Data Journal, doi:10.1002/gdj3.77
+AI4MARS: Swan, Ono, Atha et al., AI4MARS dataset, Zenodo doi:10.5281/zenodo.15995035
+HREDA: European Space Agency, Human and Robotic Exploration Data Archive
+This pack: Mars Sim Pack (GirlsWhoML x PhysicsX hack), MIT for original content

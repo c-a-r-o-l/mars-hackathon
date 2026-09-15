@@ -1,0 +1,35 @@
+{
+  "track": "A  -  Architecture",
+  "source_dataset": "EMARS (Ensemble Mars Atmosphere Reanalysis System) v1.0",
+  "source_url": "https://rmets.onlinelibrary.wiley.com/doi/10.1002/gdj3.77",
+  "archive": "https://www.datacommons.psu.edu/download/meteorology/greybush/emars-1p0/",
+  "preconditions": {
+    "crew": 100,
+    "sols": 730,
+    "dust_storm_sols": [
+      180,
+      260
+    ]
+  },
+  "site": {
+    "lat": 18.4,
+    "lon": 77.5,
+    "note": "Jezero-band settlement proxy"
+  },
+  "rows": 17520,
+  "columns": [
+    "sol",
+    "hour",
+    "mars_year_proxy",
+    "ls_deg_approx",
+    "lat",
+    "lon",
+    "temperature_c",
+    "wind_u_ms",
+    "wind_v_ms",
+    "surface_pressure_pa",
+    "dust_optical_depth",
+    "dust_storm_flag",
+    "habitat_thermal_load_kw_100p"
+  ]
+}

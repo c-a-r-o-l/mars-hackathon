@@ -1,0 +1,49 @@
+MARS FLEET DISPATCHER - RESULTS
+============================================================
+
+Trips evaluated:                    1500
+Observed success rate (measured):    63.9%
+Simulated dispatcher success rate:   87.1%
+Improvement in simulation:           +23.2 pp
+  ...among dispatched trips: 87.4%  (n=1494)
+
+The dispatcher figure is a counterfactual simulation. Alternative
+vehicle assignments were never actually driven, so these outcomes are
+predicted under the dataset's own success rule, not observed.
+
+Refusals and safety failures (reported separately, never merged):
+  NO-VEHICLE:          6  - refused: no vehicle clears payload/battery with >5% margin
+  ROUTE-INFEASIBLE:  188  - safety_score below threshold; dispatched anyway but
+                         counted as FAILURES against the assigned vehicle (no vehicle choice can fix it)
+  NO-VEHICLE refusals are NOT failures. In operations they would be
+  re-planned (split load, different route), not driven.
+
+Failure breakdown (the observed 542 failed trips, decomposed):
+  fixed by reassignment:               348
+  remaining - energy-driven (NO-VEHICLE):       6
+  remaining - safety-driven (ROUTE-INFEASIBLE): 188
+  -> 188/194 of the remaining failures are safety-driven and
+     unfixable by ANY vehicle assignment: the dispatcher is at the
+     ceiling of what assignment can fix. The rest needs route
+     re-planning or infrastructure, not better dispatch.
+
+Assignments per vehicle (before -> after):
+  light_scout      342 ->   517
+  cargo_hauler     394 ->   282
+  crew_transport   353 ->   588
+  swarm_builder    411 ->   107
+
+Trips moved off swarm_builder: 324
+swarm_builder trips refused:   0
+
+DATA FINDING - energy is vehicle-independent in this dataset:
+  The GBM gives 0.000 importance to mass_kg, battery_capacity_wh,
+  max_payload_kg and base_efficiency_mult; adding vehicle identity
+  dummies does not improve held-out MAE (193.5 vs 193.3 Wh); GBM
+  residuals differ by only 30 Wh across vehicles (within-vehicle
+  std 130-183 Wh). Trip energy is a function of route + payload
+  only, so there is no meaningful energy comparison between vehicles
+  for the same route.
+  Dispatcher policy (pure right-sizing): among vehicles that can
+  carry the payload and clear the margin, pick the smallest
+  battery_capacity_wh. No tie band, no energy ranking.

@@ -1,0 +1,43 @@
+TRACK A  -  Architecture  -  EMARS weather pack
+===========================================
+
+What this is for
+  Thermal & weather-aware habitat design for a 100-person settlement across
+  a 2 Earth-year (~730 sol) window, including one dust-storm season.
+
+Source dataset
+  EMARS (Ensemble Mars Atmosphere Reanalysis System) v1.0
+  Paper: https://rmets.onlinelibrary.wiley.com/doi/10.1002/gdj3.77
+  Archive: Penn State Data Commons (doi:10.18113/D3W375)
+  Full EMARS spans Mars Years 24-33 as hourly NetCDF grids (~GB per Ls slice).
+
+What we sliced / simulated
+  SIMULATED (EMARS-informed), not a raw NetCDF extract.
+  Full EMARS analysis files are multi-GB each, so this pack reconstructs an
+  EMARS-style hourly surface time series at ONE settlement site using
+  published Mars climate ranges (diurnal swing, thin-CO2 pressure ~610 Pa,
+  dust optical depth, global-storm opacity spikes).
+
+  Site: lat 18.4, lon 77.5 (Jezero-band proxy)
+  Window: sols 0..729 (730 sols, 24 hours/sol)
+  Dust storm season: sols 180-260 (dust_storm_flag=1)
+  Habitat column: habitat_thermal_load_kw_100p scales heating demand to
+  100 occupants (higher under dust / cold nights).
+
+Files
+  emars_settlement_hourly_730sol.csv / .parquet
+      Hourly: temperature_c, wind_u_ms, wind_v_ms, surface_pressure_pa,
+      dust_optical_depth, dust_storm_flag, habitat_thermal_load_kw_100p
+  emars_settlement_daily_summary.csv
+      Quick daily min/max/mean for architecture prototyping
+  manifest.json
+      Machine-readable provenance
+
+How to use tonight
+  Load the hourly CSV/parquet. Drive wall thickness, insulation, or a
+  storm-bunker restaurant seal schedule off dust_storm_flag + thermal load.
+  Cite EMARS as the climate prior; treat this file as the hack-ready slice.
+
+Attribution
+  See repo root CREDITS.txt, LICENSE, and KNOWN_ISSUES.txt for sources,
+  license gaps, and adversarial checks before you demo.
