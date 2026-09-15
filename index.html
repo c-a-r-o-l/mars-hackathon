@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mars Trip Checker</title>
+<style>
+  :root{
+    --paper:#F2EFE7; --panel:#E6E1D3; --ink:#23272E; --ink-2:#5A6068;
+    --iron:#B03A24; --signal:#2F7D52; --amber:#B87F22; --rule:#C9C2B2;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{
+    background:var(--paper); color:var(--ink);
+    font:17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap{ max-width:760px; margin:0 auto; padding:0 20px 60px; }
+
+  .masthead{
+    background:var(--ink); color:var(--paper);
+    padding:16px 0; border-bottom:4px solid var(--iron);
+  }
+  .masthead .wrap{
+    display:flex; align-items:center; gap:12px; padding-top:0; padding-bottom:0;
+  }
+  .masthead .dot{
+    width:12px; height:12px; border-radius:50%; background:var(--signal);
+    box-shadow:0 0 10px var(--signal); flex:none;
+  }
+  .masthead h1{ font-size:24px; letter-spacing:.04em; }
+  .masthead p{ font-size:13px; color:#B9BEC9; }
+
+  h2{ font-size:22px; margin:34px 0 10px; }
+  p.intro{ color:var(--ink-2); }
+
+  .card{
+    background:#fff; border:1px solid var(--rule); border-radius:10px;
+    padding:26px 26px 22px; margin-top:18px;
+    box-shadow:0 2px 6px rgba(35,39,46,.06);
+  }
+  label{ display:block; font-weight:600; margin:16px 0 6px; }
+  .hint{ font-weight:400; color:var(--ink-2); font-size:14px; }
+  input[type=number]{
+    width:100%; font-size:22px; padding:12px 14px;
+    border:2px solid var(--rule); border-radius:8px; background:#fff;
+  }
+  input[type=number]:focus{ outline:none; border-color:var(--iron); }
+  .terrain{ display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+  .terrain button{
+    flex:1; min-width:150px; padding:12px 10px; font-size:15px;
+    border:2px solid var(--rule); border-radius:8px; background:#fff;
+    cursor:pointer; text-align:center;
+  }
+  .terrain button small{ display:block; color:var(--ink-2); font-size:12.5px; }
+  .terrain button.on{ border-color:var(--iron); background:#F8ECE5; }
+  .check{
+    margin-top:22px; width:100%; padding:16px; font-size:20px; font-weight:700;
+    background:var(--iron); color:#fff; border:none; border-radius:10px;
+    cursor:pointer;
+  }
+  .check:hover{ background:#9C3220; }
+  .check:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+
+  #result{ display:none; margin-top:22px; }
+  .result-card{
+    border:1px solid var(--rule); border-left:8px solid var(--signal);
+    border-radius:10px; background:#fff; padding:20px 22px;
+  }
+  .result-card.warn{ border-left-color:var(--amber); }
+  .result-card.bad{ border-left-color:var(--iron); }
+  .result-card .big{ font-size:23px; font-weight:700; margin-bottom:4px; }
+  .result-card .sub{ color:var(--ink-2); font-size:15px; }
+  .result-card .sub b{ color:var(--ink); }
+
+  ul{ margin:10px 0 0 20px; }
+  li{ margin:8px 0; }
+  .statline{
+    display:flex; gap:26px; flex-wrap:wrap; margin-top:14px;
+  }
+  .statline b{ font-size:28px; display:block; }
+  .statline span{ font-size:13.5px; color:var(--ink-2); }
+  .statline .sim{ font-size:11px; border:2px solid var(--amber); color:var(--amber);
+    border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:4px;
+    letter-spacing:.08em; }
+  .fine{ margin-top:36px; font-size:13px; color:var(--ink-2); }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="wrap">
+    <span class="dot"></span>
+    <div>
+      <h1>Mars Trip Checker</h1>
+      <p>The settlement's delivery dispatcher — demo</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <h2>Will the delivery get there?</h2>
+  <p class="intro">Tell the dispatcher about the trip. It checks every rover in the
+  fleet and tells you which one should go — and whether the trip will succeed.</p>
+
+  <div class="card">
+    <label for="distance">How far is the trip?
+      <span class="hint">(in kilometres — most trips are 0.3 to 5 km)</span>
+    </label>
+    <input type="number" id="distance" value="1.5" min="0.2" max="5" step="0.1">
+
+    <label for="payload">How heavy is the cargo?
+      <span class="hint">(in kilograms — most cargo is under 600 kg)</span>
+    </label>
+    <input type="number" id="payload" value="20" min="1" max="650" step="1">
+
+    <label>What does the ground look like?</label>
+    <div class="terrain">
+      <button type="button" class="on" data-terrain="easy">Easy ground
+        <small>flat and open</small></button>
+      <button type="button" data-terrain="rough">Rough ground
+        <small>slopes and loose rocks</small></button>
+      <button type="button" data-terrain="rocky">Rock field
+        <small>lots of big rocks</small></button>
+    </div>
+
+    <button class="check" id="check">Check the trip</button>
+  </div>
+
+  <div id="result" aria-live="polite"></div>
+
+  <h2>What's the point?</h2>
+  <ul>
+    <li>Today, <b>1 in 3 delivery trips fails</b> — mostly because the wrong
+    rover gets sent.</li>
+    <li>The dispatcher fixes that: it re-planned all 1,500 trips in the
+    settlement's logbook and the success rate went from
+    <b>63.9% to 87.1%</b> <span class="sim">simulation</span></li>
+    <li>It moved <b>324 trips off the little swarm robot</b> (which failed
+    4 out of 5 trips) onto rovers that can actually finish them.</li>
+    <li>For <b>6 trips, no rover can do the job</b> — the dispatcher says
+    no instead of sending a rover out to fail.</li>
+  </ul>
+  <div class="statline">
+    <div><b>63.9% → 87.1%</b><span>trip success rate, before vs with dispatcher</span></div>
+    <div><b>61.7% → 85.0%</b><span>on 300 trips the model had never seen</span></div>
+    <div><b>+23.2</b><span>percentage points, in simulation</span></div>
+    <div><b>188</b><span>trips still fail — too rough a route, not a rover problem</span></div>
+  </div>
+
+  <h2>How it was built</h2>
+  <ul>
+    <li>Taught a model to guess how much battery a trip uses, from 1,500
+    example trips in the settlement's logbook.</li>
+    <li>It's right to within about <b>190 watt-hours</b> on trips it has
+    never seen before.</li>
+    <li>Found the exact rule the logbook uses to count a trip as a success:
+    <b>more than 5% battery left, and the route must be safe</b>.</li>
+    <li>Dispatch rule: send the <b>smallest rover that can carry the load
+    and finish with battery to spare</b>.</li>
+    <li>The 87.1% comes from re-planning the same 1,500 trips in
+    <b>simulation</b> — the alternative assignments were never really driven.</li>
+  </ul>
+
+  <p class="fine">Demo tool for the Mars Fleet Dispatcher hackathon build —
+  synthetic training data, seed 42. Full details and honest-framing notes in
+  README.md; independent verification in critique.md.</p>
+</div>
+
+<script>
+const resultBox = document.getElementById("result");
+const terrainBtns = [...document.querySelectorAll(".terrain button")];
+let terrain = "easy";
+terrainBtns.forEach(b => b.addEventListener("click", () => {
+  terrainBtns.forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  terrain = b.dataset.terrain;
+}));
+
+const NAMES = {
+  light_scout: "the scout rover",
+  cargo_hauler: "the big cargo hauler",
+  crew_transport: "the crew transporter",
+  swarm_builder: "the swarm robot",
+};
+const ORDER = ["swarm_builder", "light_scout", "crew_transport", "cargo_hauler"];
+
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+document.getElementById("check").addEventListener("click", async () => {
+  const distance = document.getElementById("distance").value;
+  const payload = document.getElementById("payload").value;
+  const url = `/predict?distance=${encodeURIComponent(distance)}&payload=${encodeURIComponent(payload)}&terrain=${terrain}`;
+  const data = await (await fetch(url)).json();
+
+  const v = data.vehicles;
+  let html = "";
+  if (data.assigned && data.safe_route) {
+    const a = v[data.assigned];
+    html = `
+      <div class="result-card">
+        <div class="big">✅ Yes — send ${a.name}.</div>
+        <div class="sub">It uses about <b>${a.energy_wh.toLocaleString()} watt-hours</b>
+        — around <b>${a.battery_pct}%</b> of its battery. The route looks safe.</div>
+        <div class="sub">${reason(data.assigned, v)}</div>
+      </div>`;
+  } else if (data.assigned && !data.safe_route) {
+    const a = v[data.assigned];
+    html = `
+      <div class="result-card warn">
+        <div class="big">⚠️ Careful — ${cap(a.name)} can carry it, but the route itself is too rough.</div>
+        <div class="sub">This trip is likely to fail on the terrain no matter which
+        rover goes. The dispatcher would send ${a.name} anyway and mark the trip as risky.</div>
+      </div>`;
+  } else {
+    const reason = data.why === "range"
+      ? "The trip is too long and heavy — even the biggest rover would run out of battery before it got there."
+      : "The cargo is too heavy — no rover in the fleet can carry it.";
+    html = `
+      <div class="result-card bad">
+        <div class="big">❌ No rover can do this trip.</div>
+        <div class="sub">${reason} <b>Split it into two trips and try again.</b></div>
+      </div>`;
+  }
+  resultBox.innerHTML = html;
+  resultBox.style.display = "block";
+  resultBox.scrollIntoView({behavior:"smooth", block:"nearest"});
+});
+
+function reason(assigned, v){
+  const idx = ORDER.indexOf(assigned);
+  for (let i = 0; i < idx; i++){
+    const vt = ORDER[i], x = v[vt];
+    if (!x.can_carry)
+      return `The smaller ${x.name} can't carry ${document.getElementById("payload").value} kg.`;
+    if (!x.can_finish)
+      return `The smaller ${x.name}'s battery is too small for this trip.`;
+  }
+  return `It's the smallest rover that can handle this trip — the bigger ones stay free for bigger jobs.`;
+}
+</script>
+</body>
+</html>

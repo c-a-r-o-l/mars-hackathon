@@ -11,8 +11,10 @@ refuse the trip.
 | File | What it is |
 |---|---|
 | `dispatcher.py` | The whole build: energy model, rule recovery, dispatcher, results, chart |
+| `server.py` + `index.html` | Trip Checker demo — tiny local web app (Python stdlib only), plain-language UI for non-technical audiences |
 | `results/summary.txt` | Printed results of all steps |
 | `results/dispatch.png` | Two-panel chart: success rates + outcome stacks |
+| `critique.md` | Independent adversarial review — every claim verified against the data |
 | `track-b2-mobility-ai4mars/track-b2-mobility-ai4mars/routes.csv` | 1,500 trips (only data used, with vehicles.csv) |
 | `track-b2-mobility-ai4mars/track-b2-mobility-ai4mars/vehicles.csv` | Fleet specs (4 vehicles) |
 
@@ -26,6 +28,23 @@ python3 -m venv venv
 ./venv/bin/pip install numpy pandas scikit-learn matplotlib
 ./venv/bin/python dispatcher.py
 ```
+
+## Demo
+
+The Trip Checker is a small web page where you type in a trip (distance,
+cargo weight, ground type) and it says which rover the dispatcher sends and
+whether the trip will succeed — in plain language, for non-technical
+audiences. No extra libraries: it uses Python's built-in web server.
+
+```
+./venv/bin/python server.py
+# then open http://localhost:8000
+```
+
+The page also carries a one-screen summary of the project and the honest
+framing (the 87.1% is labelled as a simulation). The server trains the same
+energy model as `dispatcher.py` at startup and applies the same dispatch
+rule.
 
 ## What it does, step by step
 
@@ -119,6 +138,14 @@ safety threshold. These are counted as safety-driven (safety-first
 convention), so "energy-fail 353" means failures that are not also safety
 failures; a raw margin<=5 count gives 418.
 
+**Held-out trips (Step 4b):** the same dispatcher, but with the energy model
+trained only on the other 1,200 routes and applied to the 300 held-out
+routes from the Step 1 split — trips the model never saw. Observed success
+on those 300: 61.7%; dispatched predicted success: 85.0% (NO-VEHICLE 0,
+safety-fail 45). Close to the 87.1% of the full run, which is what you want
+to see: the dispatcher decision rule itself generalises, it is not just
+refitting noise. Shown as the "HELD-OUT 300" group in the chart.
+
 Assignments before -> after:
 
 | Vehicle | Before | After |
@@ -137,10 +164,12 @@ battery can actually clear.
 Two panels, large fonts for 3-metre readability:
 
 - **Panel 1:** grouped bars, success rate by vehicle + overall, observed
-  vs dispatched. Dispatched per-vehicle rates cover **all trips assigned
-  to that vehicle, with safety failures counted as failures** - e.g.
-  cargo_hauler 82.6% (it inherits the heavy unsafe routes only it can
-  carry), swarm_builder 97.2%, overall 63.9% -> 87.1%.
+  vs dispatched, plus a **HELD-OUT 300** pair: the dispatcher run on the
+  300 held-out trips with the model trained only on the other 1,200
+  (61.7% -> 85.0%). Dispatched per-vehicle rates cover **all trips
+  assigned to that vehicle, with safety failures counted as failures** -
+  e.g. cargo_hauler 82.6% (it inherits the heavy unsafe routes only it
+  can carry), swarm_builder 97.2%, overall 63.9% -> 87.1%.
 - **Panel 2:** stacked outcomes - success / energy-fail / safety-fail,
   observed vs dispatched. Energy-fail collapses from 353 to 6; the
   safety-fail segment barely moves (189 -> 188: route-level, not fixable
