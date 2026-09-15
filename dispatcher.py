@@ -307,6 +307,11 @@ def step4_results(routes, n_no_vehicle, n_safety_fail_dispatched, m_th):
     add("     ceiling of what assignment can fix. The rest needs route")
     add("     re-planning or infrastructure, not better dispatch.")
     add("")
+    add("65 of the 542 observed failures breach both the energy-margin and")
+    add("the safety threshold. These are counted as safety-driven (safety-first")
+    add("convention), so 'energy-fail 353' means failures that are not also")
+    add("safety failures; a raw margin<=5 count gives 418.")
+    add("")
     add("Assignments per vehicle (before -> after):")
     for vt in veh_types:
         add(f"  {vt:<14} {before.get(vt, 0):>5} -> {after.get(vt, 0):>5}")

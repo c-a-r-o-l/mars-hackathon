@@ -114,6 +114,11 @@ vehicle assignment: the dispatcher sits at the ceiling of what assignment
 can fix. The rest needs route re-planning or infrastructure, not better
 dispatch.
 
+65 of the 542 observed failures breach both the energy-margin and the
+safety threshold. These are counted as safety-driven (safety-first
+convention), so "energy-fail 353" means failures that are not also safety
+failures; a raw margin<=5 count gives 418.
+
 Assignments before -> after:
 
 | Vehicle | Before | After |
