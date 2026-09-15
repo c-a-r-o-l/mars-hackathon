@@ -58,9 +58,10 @@ Grid search over thresholds reproduces the real `mission_success` exactly
 mission_success = (energy_margin_pct > 5) AND (safety_score > 0.5)
 ```
 
-This is the generator's real rule, so the counterfactual evaluation below
-uses the same definition of success as the observed data - not an invented
-one.
+The rule reproduces the real `mission_success` column exactly (1,500/1,500),
+consistent with this being the generator's rule. The counterfactual
+evaluation below uses the same definition of success as the observed data -
+not an invented one.
 
 ### Step 3 - Dispatcher (rules, not ML)
 
@@ -151,20 +152,20 @@ NOT VALIDATED: counterfactual assignments, predicted with a model refit on
                This is a demonstration of decisions, not an independent test.
 ```
 
-## Data finding: the generator's energy formula ignores vehicle specs
+## Data finding: no detectable vehicle signal in the data
 
 The spec assumed each vehicle would need a different amount of energy per
-trip. The data says otherwise:
+trip. The data shows no detectable vehicle signal: vehicle-feature
+importance is negligible (~1.8e-5 combined), vehicle-identity dummies do
+not improve held-out MAE (193.5 vs 193.3 Wh), GBM residuals differ by only
+30 Wh across vehicles (within-vehicle std is 130-183 Wh), and a model
+trained on three vehicles predicts the fourth at 211-383 Wh vs 193.3 Wh
+within-data (the high end is payload-range extrapolation when cargo_hauler
+is held out). Inferred from model behaviour; the generator source is not
+in the repo.
 
-- The GBM gives **0.000 importance** to all four vehicle features.
-- Adding vehicle-identity dummies does not improve held-out MAE
-  (193.5 vs 193.3 Wh).
-- GBM residuals differ by only 30 Wh across vehicles (within-vehicle
-  std is 130-183 Wh).
-
-Trip energy is a function of route + payload only. The vehicle's specs
-(mass, battery, efficiency multiplier) never enter the energy column -
-they matter only through payload capacity and battery margin.
+The vehicles' specs matter only through payload capacity and battery
+margin - not through the energy column.
 
 **How this changed the dispatch rule:** because trip energy is
 vehicle-independent, no energy comparison between vehicles is meaningful

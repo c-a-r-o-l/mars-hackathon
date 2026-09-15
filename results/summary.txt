@@ -36,14 +36,14 @@ Assignments per vehicle (before -> after):
 Trips moved off swarm_builder: 324
 swarm_builder trips refused:   0
 
-DATA FINDING - energy is vehicle-independent in this dataset:
-  The GBM gives 0.000 importance to mass_kg, battery_capacity_wh,
-  max_payload_kg and base_efficiency_mult; adding vehicle identity
-  dummies does not improve held-out MAE (193.5 vs 193.3 Wh); GBM
-  residuals differ by only 30 Wh across vehicles (within-vehicle
-  std 130-183 Wh). Trip energy is a function of route + payload
-  only, so there is no meaningful energy comparison between vehicles
-  for the same route.
+DATA FINDING - no detectable vehicle signal in the data:
+  Vehicle-feature importance is negligible (~1.8e-5 combined across
+  mass_kg, battery_capacity_wh, max_payload_kg, base_efficiency_mult);
+  vehicle-identity dummies do not improve held-out MAE (193.5 vs
+  193.3 Wh); GBM residuals differ by only 30 Wh across vehicles
+  (within-vehicle std 130-183 Wh). Inferred from model behaviour;
+  the generator source is not in the repo. There is therefore no
+  meaningful energy comparison between vehicles for the same route.
   Dispatcher policy (pure right-sizing): among vehicles that can
   carry the payload and clear the margin, pick the smallest
   battery_capacity_wh. No tie band, no energy ranking.
