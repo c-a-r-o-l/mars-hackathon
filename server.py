@@ -104,6 +104,12 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             with open("index.html", "rb") as f:
                 self.wfile.write(f.read())
+        elif parsed.path == "/routes.json":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            with open("routes.json", "rb") as f:
+                self.wfile.write(f.read())
         elif parsed.path == "/predict":
             q = parse_qs(parsed.query)
             try:

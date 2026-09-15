@@ -38,6 +38,69 @@
     padding:26px 26px 22px; margin-top:18px;
     box-shadow:0 2px 6px rgba(35,39,46,.06);
   }
+  .tabs{ display:flex; gap:0; border-bottom:2px solid var(--rule); margin-bottom:18px; }
+  .tabs button{
+    background:none; border:none; padding:10px 18px; font-size:16px;
+    font-weight:600; cursor:pointer; color:var(--ink-2);
+    border-bottom:3px solid transparent; margin-bottom:-2px;
+  }
+  .tabs button.on{ color:var(--ink); border-bottom-color:var(--iron); }
+  .tabs button:focus-visible{ outline:3px solid var(--amber); outline-offset:-2px; }
+
+  .actions{ display:flex; gap:12px; flex-wrap:wrap; }
+  .actions button{
+    padding:12px 18px; font-size:16px; font-weight:700; border-radius:8px;
+    cursor:pointer; border:2px solid var(--iron); background:#fff; color:var(--iron);
+  }
+  .actions button.primary{ background:var(--iron); color:#fff; border-color:var(--iron); }
+  .actions button.fix{ background:var(--signal); color:#fff; border-color:var(--signal); }
+  .actions button:hover{ filter:brightness(1.07); }
+  .actions button:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+
+  select{
+    width:100%; margin:14px 0 4px; font-size:15px; padding:10px 10px;
+    border:2px solid var(--rule); border-radius:8px; background:#fff;
+  }
+  select:focus{ outline:none; border-color:var(--iron); }
+  .count-note{ font-size:13.5px; color:var(--ink-2); margin-bottom:6px; }
+
+  .route-label{
+    font-family:ui-monospace, Menlo, Consolas, monospace; font-size:14px;
+    background:var(--panel); border-left:4px solid var(--ink);
+    padding:8px 12px; margin:12px 0; border-radius:0 6px 6px 0;
+  }
+  .block{
+    border:1px solid var(--rule); border-radius:8px; padding:14px 16px;
+    margin-top:12px;
+  }
+  .block h3{
+    font-size:13px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-2); margin-bottom:6px;
+  }
+  .block .head{ font-size:18px; font-weight:700; margin-bottom:2px; }
+  .block .sub{ font-size:15px; color:var(--ink-2); }
+  .block .sub b{ color:var(--ink); }
+  .block.logbook{ border-left:6px solid #3F5E8C; }
+  .block.model{ border-left:6px solid var(--amber); }
+  .block.dispatch{ border-left:6px solid var(--signal); }
+  .block.dispatch.bad{ border-left-color:var(--iron); }
+  .fix-banner{
+    margin-top:10px; background:#EAF3EC; border:1px solid var(--signal);
+    color:var(--signal); font-weight:700; font-size:15px; padding:8px 12px;
+    border-radius:6px;
+  }
+  table.vehs{ border-collapse:collapse; width:100%; margin-top:6px; }
+  table.vehs th{
+    font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-2); text-align:left; border-bottom:1px solid var(--rule);
+    padding:5px 8px;
+  }
+  table.vehs td{ padding:6px 8px; border-bottom:1px solid var(--rule); font-size:15px; }
+  table.vehs td.num{ font-family:ui-monospace, Menlo, Consolas, monospace; text-align:right; }
+  .tag{ font-size:13px; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap; }
+  .tag.ok{ background:#EAF3EC; color:var(--signal); }
+  .tag.no{ background:#F8ECE5; color:var(--iron); }
+
   label{ display:block; font-weight:600; margin:16px 0 6px; }
   .hint{ font-weight:400; color:var(--ink-2); font-size:14px; }
   input[type=number]{
@@ -60,8 +123,7 @@
   }
   .check:hover{ background:#9C3220; }
   .check:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
-
-  #result{ display:none; margin-top:22px; }
+  #custom-result{ display:none; margin-top:22px; }
   .result-card{
     border:1px solid var(--rule); border-left:8px solid var(--signal);
     border-radius:10px; background:#fff; padding:20px 22px;
@@ -72,16 +134,21 @@
   .result-card .sub{ color:var(--ink-2); font-size:15px; }
   .result-card .sub b{ color:var(--ink); }
 
+  .banner-err{
+    background:#F8ECE5; border:1px solid var(--iron); color:var(--iron);
+    padding:12px 16px; border-radius:8px; margin-top:14px; font-size:15px;
+  }
+  .banner-err code{ font-family:ui-monospace, Menlo, Consolas, monospace; }
+
   ul{ margin:10px 0 0 20px; }
   li{ margin:8px 0; }
-  .statline{
-    display:flex; gap:26px; flex-wrap:wrap; margin-top:14px;
-  }
+  .statline{ display:flex; gap:26px; flex-wrap:wrap; margin-top:14px; }
   .statline b{ font-size:28px; display:block; }
   .statline span{ font-size:13.5px; color:var(--ink-2); }
   .statline .sim{ font-size:11px; border:2px solid var(--amber); color:var(--amber);
     border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:4px;
     letter-spacing:.08em; }
+  .figure img{ width:100%; height:auto; border:1px solid var(--rule); margin-top:14px; }
   .fine{ margin-top:36px; font-size:13px; color:var(--ink-2); }
 </style>
 </head>
@@ -92,7 +159,7 @@
     <span class="dot"></span>
     <div>
       <h1>Mars Trip Checker</h1>
-      <p>The settlement's delivery dispatcher — runs entirely in your browser, no server</p>
+      <p>The settlement's delivery dispatcher, answering from the real 1,500-trip logbook</p>
     </div>
   </div>
 </div>
@@ -100,34 +167,32 @@
 <div class="wrap">
 
   <h2>Will the delivery get there?</h2>
-  <p class="intro">Tell the dispatcher about the trip. It checks every rover in the
-  fleet and tells you which one should go — and whether the trip will succeed.</p>
+  <p class="intro">Pick a trip from the settlement's logbook. The model reads the real
+  route data, predicts the battery use of every rover, and the dispatcher picks the
+  right one.</p>
 
   <div class="card">
-    <label for="distance">How far is the trip?
-      <span class="hint">(in kilometres — most trips are 0.3 to 5 km)</span>
-    </label>
-    <input type="number" id="distance" value="1.5" min="0.2" max="5" step="0.1">
-
-    <label for="payload">How heavy is the cargo?
-      <span class="hint">(in kilograms — most cargo is under 600 kg)</span>
-    </label>
-    <input type="number" id="payload" value="20" min="1" max="650" step="1">
-
-    <label>What does the ground look like?</label>
-    <div class="terrain">
-      <button type="button" class="on" data-terrain="easy">Easy ground
-        <small>flat and open</small></button>
-      <button type="button" data-terrain="rough">Rough ground
-        <small>slopes and loose rocks</small></button>
-      <button type="button" data-terrain="rocky">Rock field
-        <small>lots of big rocks</small></button>
+    <div class="tabs">
+      <button class="on" data-tab="routes">Real logbook routes</button>
     </div>
 
-    <button class="check" id="check">Check the trip</button>
+    <div id="tab-routes">
+      <div class="actions">
+        <button class="primary" id="random">🎲 Pick a random trip</button>
+        <button class="fix" id="fixer">Show me a trip the dispatcher fixes</button>
+      </div>
+      <select id="routes" aria-label="Choose a logbook route"></select>
+      <p class="count-note" id="count-note"></p>
+      <div class="route-label" id="route-label"></div>
+      <div id="blocks"></div>
+    </div>
   </div>
 
-  <div id="result" aria-live="polite"></div>
+  <div id="load-error" class="banner-err" style="display:none">
+    Couldn't load the logbook (<code>routes.json</code>). Run
+    <code>./venv/bin/python server.py</code> and open
+    <code>http://localhost:8000</code> — or use the hosted version.
+  </div>
 
   <h2>What's the point?</h2>
   <ul>
@@ -179,11 +244,6 @@ const VEHICLES = {
   cargo_hauler:   {name:"the big cargo hauler", max_payload_kg:600, battery:14000, mass:950, eff:1.30},
 };
 const ORDER = ["swarm_builder","light_scout","crew_transport","cargo_hauler"];
-const TERRAIN = {
-  easy:  {slope:8,  rock:0.40, hazard:0.10, regolith:1, rockfield:0},
-  rough: {slope:12, rock:0.62, hazard:0.25, regolith:1, rockfield:0},
-  rocky: {slope:16, rock:0.85, hazard:0.60, regolith:0, rockfield:1},
-};
 const COLS = Object.fromEntries(MODEL.columns.map((c,i) => [c,i]));
 
 function predictEnergy(feat){
@@ -196,20 +256,9 @@ function predictEnergy(feat){
   return s;
 }
 
-function checkTrip(distance, payload, terrainKey){
-  const t = TERRAIN[terrainKey];
-  const base = {
-    distance_km: distance,
-    num_cells: Math.max(3, Math.round(distance * 42)),
-    avg_slope_deg: t.slope,
-    max_slope_deg: t.slope * 2.2,
-    avg_rock_density: t.rock,
-    pct_high_hazard_cells: t.hazard,
-    payload_kg: payload,
-    crater_floor: 0, regolith_plain: t.regolith, rock_field: t.rockfield,
-  };
-  const feat = MODEL.columns.map(c => (c in base ? base[c] : 0));
-  const vehicles = {};
+function runDispatch(row){
+  const feat = row.feat.slice();
+  const vehs = {};
   for (const vt of ORDER){
     const v = VEHICLES[vt];
     feat[COLS.mass_kg] = v.mass;
@@ -218,84 +267,120 @@ function checkTrip(distance, payload, terrainKey){
     feat[COLS.base_efficiency_mult] = v.eff;
     const energy = predictEnergy(feat);
     const margin = (v.battery - energy) / v.battery * 100;
-    vehicles[vt] = {
-      name: v.name, energy_wh: Math.round(energy),
-      battery_pct: Math.round(energy / v.battery * 100),
-      can_carry: payload <= v.max_payload_kg,
+    vehs[vt] = {
+      energy: Math.round(energy), margin,
+      can_carry: row.payload <= v.max_payload_kg,
       can_finish: margin > 5,
     };
   }
-  const qualifiers = ORDER.filter(vt => vehicles[vt].can_carry && vehicles[vt].can_finish);
+  const qualifiers = ORDER.filter(vt => vehs[vt].can_carry && vehs[vt].can_finish);
   const assigned = qualifiers.length
     ? qualifiers.sort((a,b) => VEHICLES[a].battery - VEHICLES[b].battery)[0]
     : null;
-  const safe = MODEL.safety_a * t.hazard + MODEL.safety_b > 0.5;
-  return { vehicles, assigned, safe_route: safe,
-           why: assigned ? null : (ORDER.some(vt => vehicles[vt].can_carry) ? "range" : "too_heavy") };
+  const predicted = assigned !== null && row.safety > 0.5;
+  const fixed = row.success === 0 && predicted;
+  return { vehs, assigned, predicted, fixed };
 }
 
 /* ============ the page ============ */
-const resultBox = document.getElementById("result");
-const terrainBtns = [...document.querySelectorAll(".terrain button")];
-let terrain = "easy";
-terrainBtns.forEach(b => b.addEventListener("click", () => {
-  terrainBtns.forEach(x => x.classList.remove("on"));
-  b.classList.add("on");
-  terrain = b.dataset.terrain;
-}));
+let ROUTES = [];
+let fixedIds = [];
+const blocks = document.getElementById("blocks");
+const select = document.getElementById("routes");
+const label = document.getElementById("route-label");
 
-function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
-
-document.getElementById("check").addEventListener("click", () => {
-  const distance = Math.min(5, Math.max(0.2, parseFloat(document.getElementById("distance").value) || 1.5));
-  const payload = Math.min(650, Math.max(1, parseFloat(document.getElementById("payload").value) || 20));
-  const d = checkTrip(distance, payload, terrain);
-  const v = d.vehicles;
-  let html = "";
-  if (d.assigned && d.safe_route) {
-    const a = v[d.assigned];
-    html = `
-      <div class="result-card">
-        <div class="big">✅ Yes — send ${a.name}.</div>
-        <div class="sub">It uses about <b>${a.energy_wh.toLocaleString()} watt-hours</b>
-        — around <b>${a.battery_pct}%</b> of its battery. The route looks safe.</div>
-        <div class="sub">${reason(d.assigned, v)}</div>
-      </div>`;
-  } else if (d.assigned && !d.safe_route) {
-    const a = v[d.assigned];
-    html = `
-      <div class="result-card warn">
-        <div class="big">⚠️ Careful — ${cap(a.name)} can carry it, but the route itself is too rough.</div>
-        <div class="sub">This trip is likely to fail on the terrain no matter which
-        rover goes. The dispatcher would send ${a.name} anyway and mark the trip as risky.</div>
-      </div>`;
-  } else {
-    const why = d.why === "range"
-      ? "The trip is too long and heavy — even the biggest rover would run out of battery before it got there."
-      : "The cargo is too heavy — no rover in the fleet can carry it.";
-    html = `
-      <div class="result-card bad">
-        <div class="big">❌ No rover can do this trip.</div>
-        <div class="sub">${why} <b>Split it into two trips and try again.</b></div>
-      </div>`;
+async function init(){
+  let data;
+  try {
+    const res = await fetch("routes.json");
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+  } catch (e) {
+    document.getElementById("load-error").style.display = "block";
+    return;
   }
-  resultBox.innerHTML = html;
-  resultBox.style.display = "block";
-  resultBox.scrollIntoView({behavior:"smooth", block:"nearest"});
-});
-
-function reason(assigned, v){
-  const idx = ORDER.indexOf(assigned);
-  const payload = document.getElementById("payload").value;
-  for (let i = 0; i < idx; i++){
-    const vt = ORDER[i], x = v[vt];
-    if (!x.can_carry)
-      return `The smaller ${x.name} can't carry ${payload} kg.`;
-    if (!x.can_finish)
-      return `The smaller ${x.name}'s battery is too small for this trip.`;
+  ROUTES = data.rows;
+  for (let i = 0; i < ROUTES.length; i++){
+    ROUTES[i].disp = runDispatch(ROUTES[i]);
+    if (ROUTES[i].disp.fixed) fixedIds.push(i);
+    const opt = document.createElement("option");
+    opt.value = i; opt.textContent = ROUTES[i].label;
+    select.appendChild(opt);
   }
-  return `It's the smallest rover that can handle this trip — the bigger ones stay free for bigger jobs.`;
+  document.getElementById("count-note").textContent =
+    `${ROUTES.length} real logbook routes — the dispatcher fixes ${fixedIds.length} of the 542 failed trips.`;
+  pickRandom();
 }
+
+function pickRandom(){ render(ROUTES[Math.floor(Math.random() * ROUTES.length)]); }
+function pickFixed(){ render(ROUTES[fixedIds[Math.floor(Math.random() * fixedIds.length)]]); }
+
+function render(row){
+  select.value = row.id;
+  label.textContent = row.label;
+  const d = row.disp;
+  const failReasons = [];
+  if (row.success === 0){
+    if (row.margin <= 5) failReasons.push(`battery margin below 5% (margin was ${row.margin.toFixed(1)}%)`);
+    if (row.safety <= 0.5) failReasons.push(`route safety below 0.5 (safety was ${row.safety.toFixed(2)})`);
+  }
+  const logbook = row.success === 1
+    ? `<div class="head">✓ Succeeded</div>
+       <div class="sub">Sent: <b>${VEHICLES[row.vehicle].name}</b></div>`
+    : `<div class="head">✗ Failed</div>
+       <div class="sub">Sent: <b>${VEHICLES[row.vehicle].name}</b></div>
+       <div class="sub">Why: ${failReasons.join("; ")}</div>`;
+
+  let rowsHtml = "";
+  for (const vt of ORDER){
+    const v = d.vehs[vt];
+    rowsHtml += `<tr>
+      <td>${VEHICLES[vt].name}</td>
+      <td class="num">${v.energy.toLocaleString()} Wh</td>
+      <td><span class="tag ${v.can_carry ? "ok" : "no"}">${v.can_carry ? "✓ fits" : "✗ too heavy"}</span></td>
+      <td><span class="tag ${v.can_finish ? "ok" : "no"}">${v.can_finish ? "✓ +" + v.margin.toFixed(0) + "%" : "✗ " + v.margin.toFixed(0) + "%"}</span></td>
+    </tr>`;
+  }
+
+  let dispatch;
+  if (d.assigned){
+    const v = d.vehs[d.assigned];
+    dispatch = d.predicted
+      ? `<div class="head">Sends ${VEHICLES[d.assigned].name}</div>
+         <div class="sub">✓ <b>Predicted to succeed</b> — battery margin +${v.margin.toFixed(0)}%,
+         route safety ${row.safety.toFixed(2)}</div>`
+      : `<div class="head">Sends ${VEHICLES[d.assigned].name} — but predicts a failure</div>
+         <div class="sub">✗ The route itself is too rough (safety ${row.safety.toFixed(2)}).
+         No rover can fix the terrain.</div>`;
+    if (d.fixed) dispatch += `<div class="fix-banner">The logbook failed this trip.
+      The dispatcher's assignment fixes it.</div>`;
+  } else {
+    dispatch = `<div class="head">NO-VEHICLE — refuses the trip</div>
+      <div class="sub">No rover can carry this load and finish with more than 5% battery left.
+      In operations it would be re-planned, not driven.</div>`;
+  }
+
+  blocks.innerHTML = `
+    <div class="block logbook">
+      <h3>What the logbook says</h3>${logbook}
+    </div>
+    <div class="block model">
+      <h3>What the model predicts — battery use per rover</h3>
+      <table class="vehs">
+        <tr><th>Rover</th><th>Energy</th><th>Payload</th><th>Battery</th></tr>
+        ${rowsHtml}
+      </table>
+    </div>
+    <div class="block dispatch ${d.assigned ? "" : "bad"}">
+      <h3>What the dispatcher does</h3>${dispatch}
+    </div>`;
+}
+
+document.getElementById("random").addEventListener("click", pickRandom);
+document.getElementById("fixer").addEventListener("click", pickFixed);
+select.addEventListener("change", () => render(ROUTES[+select.value]));
+
+init();
 </script>
 </body>
 </html>
