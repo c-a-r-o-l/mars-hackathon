@@ -11,7 +11,8 @@ refuse the trip.
 | File | What it is |
 |---|---|
 | `dispatcher.py` | The whole build: energy model, rule recovery, dispatcher, results, chart |
-| `server.py` + `index.html` | Trip Checker demo — tiny local web app (Python stdlib only), plain-language UI for non-technical audiences |
+| `index.html` | Trip Checker demo — fully self-contained (model ported to JS, verified bit-identical on all 1,500 trips); opens directly in a browser |
+| `server.py` | Optional backend variant of the same demo (Python stdlib only) |
 | `results/summary.txt` | Printed results of all steps |
 | `results/dispatch.png` | Two-panel chart: success rates + outcome stacks |
 | `critique.md` | Independent adversarial review — every claim verified against the data |
@@ -34,17 +35,16 @@ python3 -m venv venv
 The Trip Checker is a small web page where you type in a trip (distance,
 cargo weight, ground type) and it says which rover the dispatcher sends and
 whether the trip will succeed — in plain language, for non-technical
-audiences. No extra libraries: it uses Python's built-in web server.
+audiences.
 
-```
-./venv/bin/python server.py
-# then open http://localhost:8000
-```
+- **Just open `index.html` in a browser** — the model is embedded in the
+  page (exported from `dispatcher.py`, verified bit-identical to Python on
+  all 1,500 trips). No server, no internet needed.
+- Alternatively, `./venv/bin/python server.py` serves the same page with a
+  Python backend at http://localhost:8000.
 
 The page also carries a one-screen summary of the project and the honest
-framing (the 87.1% is labelled as a simulation). The server trains the same
-energy model as `dispatcher.py` at startup and applies the same dispatch
-rule.
+framing (the 87.1% is labelled as a simulation).
 
 ## What it does, step by step
 
